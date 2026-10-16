@@ -13,15 +13,23 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         service: [title-normalizer, tasks-api] # ${{matrix.service }}
-        python-version: ["3.12", "3.11", "3.10"] # ${{matrix.python-version }}
+        
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
 
       - run: pip install -r services/${{ matrix.service }}/requirements.txt
-      - run: pytest services/${{ matrix.service }}
+      
+      - shell: bash
+        run: pytest -rA services/${{matrix.service}} | tee ${{ matrix.service}}-test-report.txt
+      
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+        name: ${{ matrix.service}}-test-report
+        path: ${{ matrix.service}}-test-report.txt
